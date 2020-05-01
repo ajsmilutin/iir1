@@ -31,7 +31,7 @@ int main (int,char**)
 	}
 	assert_print(fabs(b) < 1E-25,"Lowpass value for t->inf to high!");
 
-	Iir::Butterworth::BandStop<4,Iir::DirectFormI> bs;
+	Iir::Butterworth::BandStop<4,Iir::DirectFormI<double> > bs;
 	const float center_frequency = 50;
 	const float frequency_width = 5;
 	bs.setup (samplingrate, center_frequency, frequency_width);

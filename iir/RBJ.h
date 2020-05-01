@@ -40,7 +40,8 @@
 #include "Biquad.h"
 #include "State.h"
 
-namespace Iir {
+namespace Iir
+{
 
 /**
  * Filter realizations based on Robert Bristol-Johnson formulae:
@@ -57,201 +58,352 @@ namespace Iir {
  **/
 
 #define ONESQRT2 (1/sqrt(2))
-	
-namespace RBJ {
 
-	/** 
-         * The base class of all RBJ filters
-         **/
-	struct DllExport RBJbase : Biquad
+	namespace RBJ
 	{
-	public:
-		/// filter operation
-		template <typename Sample>
-			inline Sample filter(Sample s) {
-			return static_cast<Sample>(state.filter((double)s,*this));
-		}
-		/// resets the delay lines to zero
-		void reset() {
-			state.reset();
-		}
-		/// gets the delay lines (=state) of the filter
-		const DirectFormI& getState() {
-			return state;
-		}
-	private:
-		DirectFormI state;
-	};
 
-	/**
-         * Lowpass.
-         **/
-	struct DllExport LowPass : RBJbase
-	{
+		/** 
+			 * The base class of all RBJ filters
+			 **/
+		template<typename Sample=double>
+		struct DllExport RBJbase : Biquad
+		{
+		public:
+			/// filter operation
+			inline Sample filter(const Sample& s)
+			{
+				return (state.filter(s, *this));
+			}
+			/// resets the delay lines to zero
+			void reset()
+			{
+				state.reset();
+			}
+			/// gets the delay lines (=state) of the filter
+			const DirectFormI <Sample>& getState()
+			{
+				return state;
+			}
+		private:
+			DirectFormI <Sample> state;
+		};
+
 		/**
-                 * Calculates the coefficients
-                 * \param sampleRate Sampling rate
-                 * \param cutoffFrequency Cutoff frequency
-                 * \param q Q factor determines the resonance peak at the cutoff.
-                 **/
-		void setup(double sampleRate,
-			   double cutoffFrequency,
-			   double q = ONESQRT2);
-	};
+			 * Lowpass.
+			 **/
+		template<typename Sample=double>
+		struct DllExport LowPass : RBJbase<Sample>
+		{
+			/**
+					 * Calculates the coefficients
+					 * \param sampleRate Sampling rate
+					 * \param cutoffFrequency Cutoff frequency
+					 * \param q Q factor determines the resonance peak at the cutoff.
+					 **/
+			void setup(double sampleRate,
+				double cutoffFrequency,
+				double q = ONESQRT2)
+			{
+				double w0 = 2 * doublePi * cutoffFrequency / sampleRate;
+				double cs = cos(w0);
+				double sn = sin(w0);
+				double AL = sn / (2 * q);
+				double b0 = (1 - cs) / 2;
+				double b1 = 1 - cs;
+				double b2 = (1 - cs) / 2;
+				double a0 = 1 + AL;
+				double a1 = -2 * cs;
+				double a2 = 1 - AL;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+		};
 
-	/**
-         * Highpass.
-         **/
-	struct DllExport HighPass : RBJbase
-	{
 		/**
-                 * Calculates the coefficients
-                 * \param sampleRate Sampling rate
-                 * \param cutoffFrequency Cutoff frequency
-                 * \param q Q factor determines the resonance peak at the cutoff.
-                 **/
-		void setup (double sampleRate,
-			    double cutoffFrequency,
-			    double q = ONESQRT2);
-	};
+			 * Highpass.
+			 **/
+		template<typename Sample=double>
+		struct DllExport HighPass : RBJbase<Sample>
+		{
+			/**
+					 * Calculates the coefficients
+					 * \param sampleRate Sampling rate
+					 * \param cutoffFrequency Cutoff frequency
+					 * \param q Q factor determines the resonance peak at the cutoff.
+					 **/
+			void setup(double sampleRate,
+				double cutoffFrequency,
+				double q = ONESQRT2)
+			{
+				double w0 = 2 * doublePi * cutoffFrequency / sampleRate;
+				double cs = cos(w0);
+				double sn = sin(w0);
+				double AL = sn / (2 * q);
+				double b0 = (1 + cs) / 2;
+				double b1 = -(1 + cs);
+				double b2 = (1 + cs) / 2;
+				double a0 = 1 + AL;
+				double a1 = -2 * cs;
+				double a2 = 1 - AL;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+		};
 
-	/**
-         * Bandpass with constant skirt gain
-         **/
-	struct DllExport BandPass1 : RBJbase
-	{
 		/**
-                 * Calculates the coefficients
-                 * \param sampleRate Sampling rate
-                 * \param centerFrequency Center frequency of the bandpass
-                 * \param bandWidth Bandwidth in octaves
-                 **/
-		void setup (double sampleRate,
-			    double centerFrequency,
-			    double bandWidth);
-	};
+			 * Bandpass with constant skirt gain
+			 **/
+		template<typename Sample=double>
+		struct DllExport BandPass1 : RBJbase<Sample>
+		{
+			/**
+					 * Calculates the coefficients
+					 * \param sampleRate Sampling rate
+					 * \param centerFrequency Center frequency of the bandpass
+					 * \param bandWidth Bandwidth in octaves
+					 **/
+			void setup(double sampleRate,
+				double centerFrequency,
+				double bandWidth)
+			{
+				double w0 = 2 * doublePi * centerFrequency / sampleRate;
+				double cs = cos(w0);
+				double sn = sin(w0);
+				double AL = sn / (2 * bandWidth);
+				double b0 = bandWidth * AL;// sn / 2;
+				double b1 = 0;
+				double b2 = -bandWidth * AL;//-sn / 2;
+				double a0 = 1 + AL;
+				double a1 = -2 * cs;
+				double a2 = 1 - AL;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+		};
 
-	/**
-         * Bandpass with constant 0 dB peak gain
-         **/
-	struct DllExport BandPass2 : RBJbase
-	{
 		/**
-                 * Calculates the coefficients
-                 * \param sampleRate Sampling rate
-                 * \param centerFrequency Center frequency of the bandpass
-                 * \param bandWidth Bandwidth in octaves
-                 **/
-		void setup (double sampleRate,
-			    double centerFrequency,
-			    double bandWidth);
-	};
+			 * Bandpass with constant 0 dB peak gain
+			 **/
+		template<typename Sample=double>
+		struct DllExport BandPass2 : RBJbase<Sample>
+		{
+			/**
+					 * Calculates the coefficients
+					 * \param sampleRate Sampling rate
+					 * \param centerFrequency Center frequency of the bandpass
+					 * \param bandWidth Bandwidth in octaves
+					 **/
+			void setup(double sampleRate,
+				double centerFrequency,
+				double bandWidth)
+			{
+				double w0 = 2 * doublePi * centerFrequency / sampleRate;
+				double cs = cos(w0);
+				double sn = sin(w0);
+				double AL = sn / (2 * bandWidth);
+				double b0 = AL;
+				double b1 = 0;
+				double b2 = -AL;
+				double a0 = 1 + AL;
+				double a1 = -2 * cs;
+				double a2 = 1 - AL;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+		};
 
-	/**
-         * Bandstop filter. Warning: the bandwidth might not be accurate
-         * for narrow notches.
-         **/
-	struct DllExport BandStop : RBJbase
-	{
 		/**
-                 * Calculates the coefficients
-                 * \param sampleRate Sampling rate
-                 * \param centerFrequency Center frequency of the bandstop
-                 * \param bandWidth Bandwidth in octaves
-                 **/
-		void setup (double sampleRate,
-			    double centerFrequency,
-			    double bandWidth);
-	};
+			 * Bandstop filter. Warning: the bandwidth might not be accurate
+			 * for narrow notches.
+			 **/
+		template<typename Sample=double>
+		struct DllExport BandStop : RBJbase<Sample>
+		{
+			/**
+					 * Calculates the coefficients
+					 * \param sampleRate Sampling rate
+					 * \param centerFrequency Center frequency of the bandstop
+					 * \param bandWidth Bandwidth in octaves
+					 **/
+			void setup(double sampleRate,
+				double centerFrequency,
+				double bandWidth)
+			{
+				double w0 = 2 * doublePi * centerFrequency / sampleRate;
+				double cs = cos(w0);
+				double sn = sin(w0);
+				double AL = sn / (2 * bandWidth);
+				double b0 = 1;
+				double b1 = -2 * cs;
+				double b2 = 1;
+				double a0 = 1 + AL;
+				double a1 = -2 * cs;
+				double a2 = 1 - AL;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+		};
 
-	/**
-         * Bandstop with Q factor: the higher the Q factor the more narrow is
-         * the notch. 
-         * However, a narrow notch has a long impulse response ( = ringing)
-         * and numerical problems might prevent perfect damping. Practical values
-         * of the Q factor are about Q = 10 to 20. In terms of the design
-         * the Q factor defines the radius of the
-         * poles as r = exp(- pi*(centerFrequency/sampleRate)/q_factor) whereas
-         * the angles of the poles/zeros define the bandstop frequency. The higher
-         * Q the closer r moves towards the unit circle.
-         **/
-	struct DllExport IIRNotch : RBJbase
-	{
 		/**
-                 * Calculates the coefficients
-                 * \param sampleRate Sampling rate
-                 * \param centerFrequency Center frequency of the notch
-                 * \param q_factor Q factor of the notch (1 to ~20)
-                 **/
-		void setup (double sampleRate,
-			    double centerFrequency,
-			    double q_factor = 10);
-	};
+			 * Bandstop with Q factor: the higher the Q factor the more narrow is
+			 * the notch.
+			 * However, a narrow notch has a long impulse response ( = ringing)
+			 * and numerical problems might prevent perfect damping. Practical values
+			 * of the Q factor are about Q = 10 to 20. In terms of the design
+			 * the Q factor defines the radius of the
+			 * poles as r = exp(- pi*(centerFrequency/sampleRate)/q_factor) whereas
+			 * the angles of the poles/zeros define the bandstop frequency. The higher
+			 * Q the closer r moves towards the unit circle.
+			 **/
+		template<typename Sample=double>
+		struct DllExport IIRNotch : RBJbase<Sample>
+		{
+			/**
+					 * Calculates the coefficients
+					 * \param sampleRate Sampling rate
+					 * \param centerFrequency Center frequency of the notch
+					 * \param q_factor Q factor of the notch (1 to ~20)
+					 **/
+			void setup(double sampleRate,
+				double centerFrequency,
+				double q_factor = 10)
+			{
 
-	/**
-         * Low shelf: 0db in the stopband and gainDb in the passband.
-         **/
-	struct DllExport LowShelf : RBJbase
-	{
+				double w0 = 2 * doublePi * centerFrequency / sampleRate;
+				double cs = cos(w0);
+				double r = exp(-(w0 / 2) / q_factor);
+				double b0 = 1;
+				double b1 = -2 * cs;
+				double b2 = 1;
+				double a0 = 1;
+				double a1 = -2 * r * cs;
+				double a2 = r * r;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+		};
+
 		/**
-		 * Calculates the coefficients
-		 * \param sampleRate Sampling rate
-		 * \param cutoffFrequency Cutoff frequency
-		 * \param gainDb Gain in the passband
-                 * \param shelfSlope Slope between stop/passband. 1 = as steep as it can.
-		 **/
-		void setup (double sampleRate,
-			    double cutoffFrequency,
-			    double gainDb,
-			    double shelfSlope = 1);
-	};
+			 * Low shelf: 0db in the stopband and gainDb in the passband.
+			 **/
+		template<typename Sample=double>
+		struct DllExport LowShelf : RBJbase<Sample>
+		{
+			/**
+			 * Calculates the coefficients
+			 * \param sampleRate Sampling rate
+			 * \param cutoffFrequency Cutoff frequency
+			 * \param gainDb Gain in the passband
+					 * \param shelfSlope Slope between stop/passband. 1 = as steep as it can.
+			 **/
+			void setup(double sampleRate,
+				double cutoffFrequency,
+				double gainDb,
+				double shelfSlope = 1)
+			{
+				double A = pow(10, gainDb / 40);
+				double w0 = 2 * doublePi * cutoffFrequency / sampleRate;
+				double cs = cos(w0);
+				double sn = sin(w0);
+				double AL = sn / 2 * ::std::sqrt((A + 1 / A) * (1 / shelfSlope - 1) + 2);
+				double sq = 2 * sqrt(A) * AL;
+				double b0 = A * ((A + 1) - (A - 1) * cs + sq);
+				double b1 = 2 * A * ((A - 1) - (A + 1) * cs);
+				double b2 = A * ((A + 1) - (A - 1) * cs - sq);
+				double a0 = (A + 1) + (A - 1) * cs + sq;
+				double a1 = -2 * ((A - 1) + (A + 1) * cs);
+				double a2 = (A + 1) + (A - 1) * cs - sq;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+		};
 
-	/**
-         * High shelf: 0db in the stopband and gainDb in the passband.
-         **/
-	struct DllExport HighShelf : RBJbase
-	{
 		/**
-		 * Calculates the coefficients
-		 * \param sampleRate Sampling rate
-		 * \param cutoffFrequency Cutoff frequency
-		 * \param gainDb Gain in the passband
-                 * \param shelfSlope Slope between stop/passband. 1 = as steep as it can.
-		 **/
-		void setup (double sampleRate,
-			    double cutoffFrequency,
-			    double gainDb,
-			    double shelfSlope = 1);
-	};
+			 * High shelf: 0db in the stopband and gainDb in the passband.
+			 **/
+		template<typename Sample=double>
+		struct DllExport HighShelf : RBJbase<Sample>
+		{
+			/**
+			 * Calculates the coefficients
+			 * \param sampleRate Sampling rate
+			 * \param cutoffFrequency Cutoff frequency
+			 * \param gainDb Gain in the passband
+					 * \param shelfSlope Slope between stop/passband. 1 = as steep as it can.
+			 **/
+			void setup(double sampleRate,
+				double cutoffFrequency,
+				double gainDb,
+				double shelfSlope = 1)
+			{
+				double A = pow(10, gainDb / 40);
+				double w0 = 2 * doublePi * cutoffFrequency / sampleRate;
+				double cs = cos(w0);
+				double sn = sin(w0);
+				double AL = sn / 2 * ::std::sqrt((A + 1 / A) * (1 / shelfSlope - 1) + 2);
+				double sq = 2 * sqrt(A) * AL;
+				double b0 = A * ((A + 1) + (A - 1) * cs + sq);
+				double b1 = -2 * A * ((A - 1) + (A + 1) * cs);
+				double b2 = A * ((A + 1) + (A - 1) * cs - sq);
+				double a0 = (A + 1) - (A - 1) * cs + sq;
+				double a1 = 2 * ((A - 1) - (A + 1) * cs);
+				double a2 = (A + 1) - (A - 1) * cs - sq;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+		};
 
-	/**
-         * Band shelf: 0db in the stopband and gainDb in the passband.
-         **/
-	struct DllExport BandShelf : RBJbase
-	{
 		/**
-		 * Calculates the coefficients
-		 * \param sampleRate Sampling rate
-		 * \param centerFrequency frequency
-		 * \param gainDb Gain in the passband
-                 * \param bandWidth Bandwidth in octaves
-		 **/
-		void setup (double sampleRate,
-			    double centerFrequency,
-			    double gainDb,
-			    double bandWidth);
-	};
+			 * Band shelf: 0db in the stopband and gainDb in the passband.
+			 **/
+		template<typename Sample=double>
+		struct DllExport BandShelf : RBJbase<Sample>
+		{
+			/**
+			 * Calculates the coefficients
+			 * \param sampleRate Sampling rate
+			 * \param centerFrequency frequency
+			 * \param gainDb Gain in the passband
+					 * \param bandWidth Bandwidth in octaves
+			 **/
+			void setup(double sampleRate,
+				double centerFrequency,
+				double gainDb,
+				double bandWidth)
+			{
+				double A = pow(10, gainDb / 40);
+				double w0 = 2 * doublePi * centerFrequency / sampleRate;
+				double cs = cos(w0);
+				double sn = sin(w0);
+				double AL = sn * sinh(doubleLn2 / 2 * bandWidth * w0 / sn);
+				if (Iir::is_nan(AL))
+					throw std::invalid_argument("No solution available for these parameters.\n");
+				double b0 = 1 + AL * A;
+				double b1 = -2 * cs;
+				double b2 = 1 - AL * A;
+				double a0 = 1 + AL / A;
+				double a1 = -2 * cs;
+				double a2 = 1 - AL / A;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+		};
 
-	struct DllExport AllPass : RBJbase
-	{
-		void setup (double sampleRate,
-			    double phaseFrequency,
-			    double q);
-	};
-	
+		template<typename Sample=double>
+		struct DllExport AllPass : RBJbase<Sample>
+		{
+			void setup(double sampleRate,
+				double phaseFrequency,
+				double q)
+			{
+				double w0 = 2 * doublePi * phaseFrequency / sampleRate;
+				double cs = cos(w0);
+				double sn = sin(w0);
+				double AL = sn / (2 * q);
+				double b0 = 1 - AL;
+				double b1 = -2 * cs;
+				double b2 = 1 + AL;
+				double a0 = 1 + AL;
+				double a1 = -2 * cs;
+				double a2 = 1 - AL;
+				Biquad::setCoefficients(a0, a1, a2, b0, b1, b2);
+			}
+
+		};
+
+	}
+
 }
-
-}
-
 
 #endif

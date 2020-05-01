@@ -6,7 +6,7 @@
 
 int main (int,char**)
 {
-	Iir::RBJ::LowPass f;
+	Iir::RBJ::LowPass<double> f;
 	const float samplingrate = 1000; // Hz
 	const float cutoff_frequency = 5; // Hz
 	const float qfactor = 1;
@@ -23,7 +23,7 @@ int main (int,char**)
 	fprintf(stderr,"%e\n",b);
 	assert_print(fabs(b) < 1E-15,"Lowpass value for t->inf to high!");
 
-	Iir::RBJ::BandStop bs;
+	Iir::RBJ::BandStop<double> bs;
 	const float center_frequency = 50;
 	const float frequency_width = 5;
 	bs.setup (samplingrate, center_frequency, frequency_width);

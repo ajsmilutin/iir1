@@ -38,7 +38,7 @@ int main (int,char**)
 	// cutoff frequency. If Q=1/sqrt(2) then the transition
 	// has no resonance. The higher the Q-factor the higher
 	// the resonance.
-	Iir::RBJ::HighPass hp;
+	Iir::RBJ::HighPass<double> hp;
 	const float hp_cutoff_frequency = 100;
 	const float hp_qfactor = 5;
 	hp.setup (samplingrate, hp_cutoff_frequency, hp_qfactor);
@@ -89,7 +89,7 @@ int main (int,char**)
 	// then tunes the width of the filter.
 	// The higher the Q factor the narrow the notch
 	// but the longer its impulse response (=ringing).
-	Iir::RBJ::IIRNotch bsn;
+	Iir::RBJ::IIRNotch<double> bsn;
 	const float bs_frequency = 50;
 	bsn.setup (samplingrate, bs_frequency);
 	fimpulse = fopen("bs_rbj.dat","wt");

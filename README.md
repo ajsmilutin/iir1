@@ -1,4 +1,4 @@
-# IIR1 -- Realtime C++ filter library
+# IIR1 -- Templated realtime C++ filter library
 
 ![alt tag](title.png)
 

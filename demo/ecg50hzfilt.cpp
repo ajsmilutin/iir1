@@ -8,7 +8,7 @@ int main (int,char**)
 {
 	const float fs = 1000;
         const float mains = 50;
-	Iir::RBJ::IIRNotch iirnotch;
+	Iir::RBJ::IIRNotch<double> iirnotch;
 	iirnotch.setup(fs,mains);
 
         const float ecg_max_f = 100;

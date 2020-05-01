@@ -30,7 +30,6 @@ set(LIBSRC
   iir/ChebyshevII.cpp
   iir/Custom.cpp
   iir/PoleFilter.cpp
-  iir/RBJ.cpp
   iir/State.cpp)
 
 set(LIBINCLUDE

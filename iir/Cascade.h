@@ -161,12 +161,12 @@ namespace Iir {
 		template <typename Sample>
 			inline Sample filter(const Sample in)
 		{
-			double out = in;
+			Sample out = in;
 			StateType* state = m_states;
 			Biquad const* stage = m_stages;
 			for (int i = MaxStages; --i >= 0; ++state, ++stage)
 				out = state->filter(out, *stage);
-			return static_cast<Sample> (out);
+			return out;
 		}
 
 		Cascade::Storage getCascadeStorage()

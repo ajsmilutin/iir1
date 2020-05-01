@@ -41,9 +41,19 @@
 
 #include <stdexcept>
 
-#define DEFAULT_STATE DirectFormII
+#define DEFAULT_STATE DirectFormII<double>
 
-namespace Iir {
+namespace Iir
+{
+
+	template<typename Sample>
+	Sample Zero();
+
+	template<>
+	inline double Zero<double>()
+	{
+		return 0;
+	}
 
 /**
  * State for applying a second order section to a sample using Direct Form I
@@ -53,27 +63,28 @@ namespace Iir {
  *  y[n] = (b0/a0)*x[n] + (b1/a0)*x[n-1] + (b2/a0)*x[n-2]
  *                      - (a1/a0)*y[n-1] - (a2/a0)*y[n-2]  
  **/
+	template<typename Sample=double>
 	class DllExport DirectFormI
 	{
 	public:
-		DirectFormI ()
+		DirectFormI()
 		{
 			reset();
 		}
 
-		void reset ()
+		void reset()
 		{
-			m_x1 = 0;
-			m_x2 = 0;
-			m_y1 = 0;
-			m_y2 = 0;
+			m_x1 = Zero<Sample>();
+			m_x2 = Zero<Sample>();
+			m_y1 = Zero<Sample>();
+			m_y2 = Zero<Sample>();
 		}
 
-			inline double filter(const double in,
-					     const Biquad& s)
+		inline Sample filter(const Sample& in,
+			const Biquad& s)
 		{
-			double out = s.m_b0*in + s.m_b1*m_x1 + s.m_b2*m_x2
-				- s.m_a1*m_y1 - s.m_a2*m_y2;
+			Sample out = s.m_b0 * in + s.m_b1 * m_x1 + s.m_b2 * m_x2
+				- s.m_a1 * m_y1 - s.m_a2 * m_y2;
 			m_x2 = m_x1;
 			m_y2 = m_y1;
 			m_x1 = in;
@@ -83,10 +94,10 @@ namespace Iir {
 		}
 
 	protected:
-		double m_x2 = 0; // x[n-2]
-		double m_y2 = 0; // y[n-2]
-		double m_x1 = 0; // x[n-1]
-		double m_y1 = 0; // y[n-1]
+		Sample m_x2; // x[n-2]
+		Sample m_y2; // y[n-2]
+		Sample m_x1; // x[n-1]
+		Sample m_y1; // y[n-1]
 	};
 
 //------------------------------------------------------------------------------
@@ -100,25 +111,26 @@ namespace Iir {
  *  y(n) = (b0/a0)*v[n] + (b1/a0)*v[n-1] + (b2/a0)*v[n-2]
  *
  **/
+	template<typename Sample=double>
 	class DllExport DirectFormII
 	{
 	public:
-		DirectFormII ()
+		DirectFormII()
 		{
-			reset ();
+			reset();
 		}
 
-		void reset ()
+		void reset()
 		{
-			m_v1 = 0;
-			m_v2 = 0;
+			m_v1 = Zero<Sample>();
+			m_v2 = Zero<Sample>();
 		}
 
-			double filter(const double in,
-				      const Biquad& s)
+		Sample filter(const Sample& in,
+			const Biquad& s)
 		{
-			double w   = in - s.m_a1*m_v1 - s.m_a2*m_v2;
-			double out =      s.m_b0*w    + s.m_b1*m_v1 + s.m_b2*m_v2;
+			Sample w = in - s.m_a1 * m_v1 - s.m_a2 * m_v2;
+			Sample out = s.m_b0 * w + s.m_b1 * m_v1 + s.m_b2 * m_v2;
 
 			m_v2 = m_v1;
 			m_v1 = w;
@@ -127,37 +139,36 @@ namespace Iir {
 		}
 
 	private:
-		double m_v1 = 0; // v[-1]
-		double m_v2 = 0; // v[-2]
+		Sample m_v1; // v[-1]
+		Sample m_v2; // v[-2]
 	};
 
-
 //------------------------------------------------------------------------------
-
+	template<typename Sample=double>
 	class DllExport TransposedDirectFormII
 	{
 	public:
-		TransposedDirectFormII ()
+		TransposedDirectFormII()
 		{
-			reset ();
+			reset();
 		}
 
-		void reset ()
+		void reset()
 		{
-			m_s1 = 0;
-			m_s1_1 = 0;
-			m_s2 = 0;
-			m_s2_1 = 0;
+			m_s1 = Zero<Sample>();
+			m_s1_1 = Zero<Sample>();
+			m_s2 = Zero<Sample>();
+			m_s2_1 = Zero<Sample>();
 		}
 
-			inline double filter(const double in,
-					     const Biquad& s)
+		inline Sample filter(const Sample& in,
+			const Biquad& s)
 		{
-			double out;
+			Sample out;
 
-			out = m_s1_1 + s.m_b0*in;
-			m_s1 = m_s2_1 + s.m_b1*in - s.m_a1*out;
-			m_s2 = s.m_b2*in - s.m_a2*out;
+			out = m_s1_1 + s.m_b0 * in;
+			m_s1 = m_s2_1 + s.m_b1 * in - s.m_a1 * out;
+			m_s2 = s.m_b2 * in - s.m_a2 * out;
 			m_s1_1 = m_s1;
 			m_s2_1 = m_s2;
 
@@ -165,10 +176,10 @@ namespace Iir {
 		}
 
 	private:
-		double m_s1 = 0;
-		double m_s1_1 = 0;
-		double m_s2 = 0;
-		double m_s2_1 = 0;
+		Sample m_s1;
+		Sample m_s1_1;
+		Sample m_s2;
+		Sample m_s2_1;
 	};
 
 }
